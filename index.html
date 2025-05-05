@@ -136,7 +136,6 @@
       <button id="printBtn" class="bg-blue-600 text-white px-5 py-2 rounded">列印</button>
             <button id="pdfBtn" class="bg-purple-600 text-white px-5 py-2 rounded">匯出 PDF</button>
       <button id="xlsxBtn" class="bg-yellow-600 text-white px-5 py-2 rounded">Excel</button>
-      <button id="saveHtml" class="bg-orange-600 text-white px-5 py-2 rounded">另存 HTML</button>
       <button id="saveJson" class="bg-gray-600 text-white px-5 py-2 rounded">另存 JSON</button>
       <button id="loadExampleBtn" class="bg-teal-600 text-white px-5 py-2 rounded">載入預設範例</button>
       <button id="importJson" class="bg-indigo-600 text-white px-5 py-2 rounded">匯入 JSON</button>
@@ -364,17 +363,7 @@
     // 輸出 Excel 檔
     XLSX.writeFile(wb, 'GHG_' + Date.now() + '.xlsx');
   };
-
-  // Save HTML
-  saveHtml.onclick = () => {
-    const htmlContent = document.documentElement.outerHTML;
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'GHG_saved_' + Date.now() + '.html';
-    a.click();
-  };
-
+ 
   // 另存 JSON
   saveJson.onclick = () => {
     const data = {
