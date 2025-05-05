@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>登入 - 碳盤查工具</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding-top: 10%; }
+    input, button { margin: 5px; padding: 10px; font-size: 1.2em; }
+    button { background: #4caf50; color: white; border: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>請登入使用碳盤查工具</h1>
+  <input type="text" id="username" placeholder="帳號"><br>
+  <input type="password" id="password" placeholder="密碼"><br>
+  <button onclick="login()">登入</button>
+  <script>
+    function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      if (u === 'admin' && p === '1234') {
+        localStorage.setItem('loggedIn', 'true');
+        window.location.href = 'index.html';
+      } else {
+        alert('帳號或密碼錯誤');
+      }
+    }
+  </script>
+</body>
+</html>

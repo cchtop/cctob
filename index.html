@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>食品工廠溫室氣體盤查工具 (完整+記憶)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+  table input { font-size: 0.75rem; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-7xl mx-auto p-4">
+    <h1 class="text-2xl font-bold text-center mb-4">食品工廠溫室氣體盤查工具</h1>
+
+    <!-- GWP -->
+    <details class="mb-6">
+      <summary class="font-semibold cursor-pointer">🌍 編輯 GWP100 (AR6)</summary>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+        <div>
+          <label class="font-medium">CO₂</label>
+          <input id="gwpCO2" type="number" step="any" value="1" class="border rounded w-full p-1">
+        </div>
+        <div>
+          <label class="font-medium">CH₄</label>
+          <input id="gwpCH4" type="number" step="any" value="27.9" class="border rounded w-full p-1">
+        </div>
+        <div>
+          <label class="font-medium">N₂O</label>
+          <input id="gwpN2O" type="number" step="any" value="273" class="border rounded w-full p-1">
+        </div>
+      </div>
+    </details>
+
+    <!-- 固定 -->
+    <details open class="mb-4">
+      <summary class="font-semibold cursor-pointer">1️⃣ 固定排放源</summary>
+      <table class="min-w-full border text-xs">
+        <thead class="bg-green-200">
+          <tr>
+            <th class="border p-1">燃料</th>
+            <th class="border p-1">量</th>
+            <th class="border p-1">單位</th>
+            <th class="border p-1">CO₂</th>
+            <th class="border p-1">CH₄</th>
+            <th class="border p-1">N₂O</th>
+            <th class="border p-1">操作</th>
+          </tr>
+        </thead>
+        <tbody id="bodyFix"></tbody>
+      </table>
+      <button onclick="addRow('Fix')" class="mt-1 bg-gray-300 px-2 py-1 rounded text-sm">＋ 新增</button>
+    </details>
+
+    <!-- 移動 -->
+    <details class="mb-4">
+      <summary class="font-semibold cursor-pointer">2️⃣ 移動排放源</summary>
+      <table class="min-w-full border text-xs">
+        <thead class="bg-green-200">
+          <tr>
+            <th class="border p-1">燃料</th>
+            <th class="border p-1">量</th>
+            <th class="border p-1">單位</th>
+            <th class="border p-1">CO₂</th>
+            <th class="border p-1">CH₄</th>
+            <th class="border p-1">N₂O</th>
+            <th class="border p-1">操作</th>
+          </tr>
+        </thead>
+        <tbody id="bodyMob"></tbody>
+      </table>
+      <button onclick="addRow('Mob')" class="mt-1 bg-gray-300 px-2 py-1 rounded text-sm">＋ 新增</button>
+    </details>
+
+    <!-- 製程 -->
+    <details class="mb-4">
+      <summary class="font-semibold cursor-pointer">3️⃣ 製程排放源</summary>
+      <table class="min-w-full border text-xs">
+        <thead class="bg-green-200">
+          <tr>
+            <th class="border p-1">來源</th>
+            <th class="border p-1">量</th>
+            <th class="border p-1">單位</th>
+            <th class="border p-1">CO₂</th>
+            <th class="border p-1">操作</th>
+          </tr>
+        </thead>
+        <tbody id="bodyProc"></tbody>
+      </table>
+      <button onclick="addRow('Proc')" class="mt-1 bg-gray-300 px-2 py-1 rounded text-sm">＋ 新增</button>
+    </details>
+
+    <!-- 逸散 -->
+    <details class="mb-4">
+      <summary class="font-semibold cursor-pointer">4️⃣ 逸散排放源</summary>
+      <table class="min-w-full border text-xs">
+        <thead class="bg-green-200">
+          <tr>
+            <th class="border p-1">來源</th>
+            <th class="border p-1">量</th>
+            <th class="border p-1">單位</th>
+            <th class="border p-1">CO₂</th>
+            <th class="border p-1">CH₄</th>
+            <th class="border p-1">HFCs</th>
+            <th class="border p-1">GWP</th>
+            <th class="border p-1">操作</th>
+          </tr>
+        </thead>
+        <tbody id="bodyFug"></tbody>
+      </table>
+      <button onclick="addRow('Fug')" class="mt-1 bg-gray-300 px-2 py-1 rounded text-sm">＋ 新增</button>
+    </details>
+
+    <!-- 範疇2 -->
+    <h2 class="text-xl font-semibold mb-2">範疇 2 — 能源間接排放</h2>
+    <table class="min-w-full border text-xs mb-2">
+      <thead class="bg-blue-200">
+        <tr>
+          <th class="border p-1">來源</th>
+          <th class="border p-1">量</th>
+          <th class="border p-1">單位</th>
+          <th class="border p-1">CO₂</th>
+          <th class="border p-1">操作</th>
+        </tr>
+      </thead>
+      <tbody id="bodyS2"></tbody>
+    </table>
+    <button onclick="addRow('S2')" class="bg-gray-300 px-2 py-1 rounded text-sm mb-6">＋ 新增外購能源</button>
+
+    <!-- Buttons -->
+    <div class="flex flex-wrap gap-3 justify-center mb-4">
+      <button id="calc" class="bg-green-600 text-white px-5 py-2 rounded">計算</button>
+      <button id="printBtn" class="bg-blue-600 text-white px-5 py-2 rounded">列印</button>
+            <button id="pdfBtn" class="bg-purple-600 text-white px-5 py-2 rounded">匯出 PDF</button>
+      <button id="xlsxBtn" class="bg-yellow-600 text-white px-5 py-2 rounded">Excel</button>
+      <button id="saveJson" class="bg-gray-600 text-white px-5 py-2 rounded">另存 JSON</button>
+      <button id="loadExampleBtn" class="bg-teal-600 text-white px-5 py-2 rounded">載入預設範例</button>
+      <button id="importJson" class="bg-indigo-600 text-white px-5 py-2 rounded">匯入 JSON</button>
+      <button id="importExcel" class="bg-indigo-700 text-white px-5 py-2 rounded">匯入 Excel</button>
+      <input type="file" id="fileJsonInput" accept=".json" style="display:none">
+      <input type="file" id="fileExcelInput" accept=".xlsx" style="display:none">
+    </div>
+
+    <div id="report" class="bg-white border rounded p-4 shadow hidden print:block">
+      <h3 class="font-semibold mb-2 text-center">盤查結果明細 (kg CO₂e)</h3>
+      <pre id="result" class="text-xs whitespace-pre-wrap"></pre>
+    </div>
+
+    <div id="lastSaved" class="fixed bottom-2 right-2 text-xs text-gray-500">最後儲存日期：尚未儲存</div>
+  </div>
+
+  <script>
+  // 功能函式
+  function del(btn) { btn.closest('tr').remove(); }
+  function mk(cls, val='', ph='', w='20') { return `<input class='${cls} border w-${w} p-1' value='${val}' placeholder='${ph}'>`; }
+  function makeRow(sec, d={}) {
+    if(sec==='Fix' || sec==='Mob') {
+      return `<tr>
+        <td class='border p-1'>${mk("name w-28", d.name||'', '燃料', '28')}</td>
+        <td class='border p-1'>${mk("act", d.act||'')}</td>
+        <td class='border p-1'>${mk("unit", d.unit||'', '單位')}</td>
+        <td class='border p-1'>${mk("fco2", d.fco2||'')}</td>
+        <td class='border p-1'>${mk("fch4", d.fch4||'')}</td>
+        <td class='border p-1'>${mk("fn2o", d.fn2o||'')}</td>
+        <td class='border p-1 text-center'><button onclick='del(this)' class='text-red-600'>✖</button></td>
+      </tr>`;
+    }
+    if(sec==='Proc') {
+      return `<tr>
+        <td class='border p-1'>${mk("name w-28", d.name||'', '來源', '28')}</td>
+        <td class='border p-1'>${mk("act", d.act||'')}</td>
+        <td class='border p-1'>${mk("unit", d.unit||'', '單位')}</td>
+        <td class='border p-1'>${mk("fco2", d.fco2||'')}</td>
+        <td class='border p-1 text-center'><button onclick='del(this)' class='text-red-600'>✖</button></td>
+      </tr>`;
+    }
+    if(sec==='Fug') {
+      return `<tr>
+        <td class='border p-1'>${mk("name w-28", d.name||'', '來源', '28')}</td>
+        <td class='border p-1'>${mk("act", d.act||'')}</td>
+        <td class='border p-1'>${mk("unit", d.unit||'', '單位')}</td>
+        <td class='border p-1'>${mk("fco2", d.fco2||'')}</td>
+        <td class='border p-1'>${mk("fch4", d.fch4||'')}</td>
+        <td class='border p-1'>${mk("fhfc", d.fhfc||'')}</td>
+        <td class='border p-1'>${mk("gwp", d.gwp||'', 'GWP')}</td>
+        <td class='border p-1 text-center'><button onclick='del(this)' class='text-red-600'>✖</button></td>
+      </tr>`;
+    }
+    if(sec==='S2') {
+      return `<tr>
+        <td class='border p-1'>${mk("name w-28", d.name||'', '來源', '28')}</td>
+        <td class='border p-1'>${mk("act", d.act||'')}</td>
+        <td class='border p-1'>${mk("unit", d.unit||'', '單位')}</td>
+        <td class='border p-1'>${mk("fco2", d.fco2||'')}</td>
+        <td class='border p-1 text-center'><button onclick='del(this)' class='text-red-600'>✖</button></td>
+      </tr>`;
+    }
+  }
+  function addRow(sec, d) {
+    document.querySelector('#body'+sec).insertAdjacentHTML('beforeend', makeRow(sec, d||{}));
+  }
+
+  // 取得按鈕元素
+  const calc = document.getElementById("calc");
+  const printBtn = document.getElementById("printBtn");
+  const pdfBtn = document.getElementById("pdfBtn");
+  const xlsxBtn = document.getElementById("xlsxBtn");
+  const saveHtml = document.getElementById("saveHtml");
+  const saveJson = document.getElementById("saveJson");
+  const loadExampleBtn = document.getElementById("loadExampleBtn");
+  const importJson = document.getElementById("importJson");
+  const importExcel = document.getElementById("importExcel");
+  const fileJsonInput = document.getElementById("fileJsonInput");
+  const fileExcelInput = document.getElementById("fileExcelInput");
+  const result = document.getElementById("result");
+  const report = document.getElementById("report");
+  const lastSaved = document.getElementById("lastSaved");
+
+  // 計算
+  calc.onclick = () => {
+    const gwpC = parseFloat(gwpCO2.value) || 0,
+          gwpH = parseFloat(gwpCH4.value) || 0,
+          gwpN = parseFloat(gwpN2O.value) || 0;
+    let sc1 = 0, sc2 = 0;
+    let lines = [];
+    function process(sec, cols) {
+      document.querySelectorAll('#body'+sec+' tr').forEach(tr => {
+        const act = parseFloat(tr.querySelector('.act')?.value) || 0;
+        if(!act) return;
+        const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+        const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent;
+        let co2 = 0, ch4 = 0, n2o = 0, hfc = 0;
+        if(cols.includes('co2')) co2 = parseFloat(tr.querySelector('.fco2')?.value) || 0;
+        if(cols.includes('ch4')) ch4 = parseFloat(tr.querySelector('.fch4')?.value) || 0;
+        if(cols.includes('n2o')) n2o = parseFloat(tr.querySelector('.fn2o')?.value) || 0;
+        if(cols.includes('hfc')) hfc = parseFloat(tr.querySelector('.fhfc')?.value) || 0;
+        let emis = 0;
+        if(sec === 'Fug') {
+          const rowGWP = parseFloat(tr.querySelector('.gwp')?.value) || 0;
+          emis = act * (co2 * gwpC + ch4 * gwpH + n2o * gwpN + hfc * rowGWP);
+        } else {
+          emis = act * (co2 * gwpC + ch4 * gwpH + n2o * gwpN + hfc * gwpN);
+        }
+        if(sec === 'S2') sc2 += emis; else sc1 += emis;
+        lines.push(`${sec}-${name}：${act}${unit||''} => ${emis.toFixed(2)} kg CO₂e`);
+      });
+    }
+    process('Fix', ['co2','ch4','n2o']);
+    process('Mob', ['co2','ch4','n2o']);
+    process('Proc', ['co2']);
+    process('Fug', ['co2','ch4','hfc']);
+    process('S2', ['co2']);
+    lines.push(`範疇 1：${sc1.toFixed(2)}`);
+    lines.push(`範疇 2：${sc2.toFixed(2)}`);
+    lines.push(`總計：${(sc1+sc2).toFixed(2)}`);
+    result.textContent = lines.join('\n');
+    report.classList.remove('hidden');
+  };
+
+  // 列印
+  printBtn.onclick = () => {
+    if(report.classList.contains('hidden')) { alert('請先計算'); return; }
+    window.print();
+  };;
+
+  // Excel 匯出
+  xlsxBtn.onclick = () => {
+    if(report.classList.contains('hidden')) { alert('請先計算'); return; }
+    const wb = XLSX.utils.book_new();
+    const gwpC = parseFloat(gwpCO2.value) || 0,
+          gwpH = parseFloat(gwpCH4.value) || 0,
+          gwpN = parseFloat(gwpN2O.value) || 0;
+    // 固定排放源
+    let wsData = [];
+    wsData.push(["來源名稱","活動量","單位","CO₂","CH₄","N₂O","HFCs","自訂 GWP","排放量(kg CO₂e)"]);
+    document.querySelectorAll('#bodyFix tr').forEach(tr => {
+      const actVal = tr.querySelector('.act')?.value || '';
+      if(!actVal || isNaN(parseFloat(actVal))) return;
+      const act = parseFloat(actVal);
+      if(act === 0) return;
+      const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+      const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent || '';
+      const fco2Val = tr.querySelector('.fco2')?.value || '';
+      const fch4Val = tr.querySelector('.fch4')?.value || '';
+      const fn2oVal = tr.querySelector('.fn2o')?.value || '';
+      const emis = act * ((parseFloat(fco2Val)||0)*gwpC + (parseFloat(fch4Val)||0)*gwpH + (parseFloat(fn2oVal)||0)*gwpN);
+      wsData.push([name, act, unit, fco2Val, fch4Val, fn2oVal, '', '', emis.toFixed(2)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), '固定排放源');
+
+    // 移動排放源
+    wsData = [];
+    wsData.push(["來源名稱","活動量","單位","CO₂","CH₄","N₂O","HFCs","自訂 GWP","排放量(kg CO₂e)"]);
+    document.querySelectorAll('#bodyMob tr').forEach(tr => {
+      const actVal = tr.querySelector('.act')?.value || '';
+      if(!actVal || isNaN(parseFloat(actVal))) return;
+      const act = parseFloat(actVal);
+      if(act === 0) return;
+      const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+      const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent || '';
+      const fco2Val = tr.querySelector('.fco2')?.value || '';
+      const fch4Val = tr.querySelector('.fch4')?.value || '';
+      const fn2oVal = tr.querySelector('.fn2o')?.value || '';
+      const emis = act * ((parseFloat(fco2Val)||0)*gwpC + (parseFloat(fch4Val)||0)*gwpH + (parseFloat(fn2oVal)||0)*gwpN);
+      wsData.push([name, act, unit, fco2Val, fch4Val, fn2oVal, '', '', emis.toFixed(2)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), '移動排放源');
+
+    // 製程排放源
+    wsData = [];
+    wsData.push(["來源名稱","活動量","單位","CO₂","CH₄","N₂O","HFCs","自訂 GWP","排放量(kg CO₂e)"]);
+    document.querySelectorAll('#bodyProc tr').forEach(tr => {
+      const actVal = tr.querySelector('.act')?.value || '';
+      if(!actVal || isNaN(parseFloat(actVal))) return;
+      const act = parseFloat(actVal);
+      if(act === 0) return;
+      const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+      const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent || '';
+      const fco2Val = tr.querySelector('.fco2')?.value || '';
+      const emis = act * ((parseFloat(fco2Val)||0)*gwpC);
+      wsData.push([name, act, unit, fco2Val, '', '', '', '', emis.toFixed(2)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), '製程排放源');
+
+    // 逸散排放源
+    wsData = [];
+    wsData.push(["來源名稱","活動量","單位","CO₂","CH₄","HFCs","自訂 GWP","排放量(kg CO₂e)"]);
+    document.querySelectorAll('#bodyFug tr').forEach(tr => {
+      const actVal = tr.querySelector('.act')?.value || '';
+      if(!actVal || isNaN(parseFloat(actVal))) return;
+      const act = parseFloat(actVal);
+      if(act === 0) return;
+      const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+      const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent || '';
+      const fco2Val = tr.querySelector('.fco2')?.value || '';
+      const fch4Val = tr.querySelector('.fch4')?.value || '';
+      const fhfcVal = tr.querySelector('.fhfc')?.value || '';
+      const gwpVal = tr.querySelector('.gwp')?.value || '';
+      const emis = act * ((parseFloat(fco2Val)||0)*gwpC + (parseFloat(fch4Val)||0)*gwpH + (parseFloat(fhfcVal)||0)*(parseFloat(gwpVal)||0));
+      wsData.push([name, act, unit, fco2Val, fch4Val, fhfcVal, gwpVal, emis.toFixed(2)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), '逸散排放源');
+
+    // 範疇2
+    wsData = [];
+    wsData.push(["來源名稱","活動量","單位","CO₂","排放量(kg CO₂e)"]);
+    document.querySelectorAll('#bodyS2 tr').forEach(tr => {
+      const actVal = tr.querySelector('.act')?.value || '';
+      if(!actVal || isNaN(parseFloat(actVal))) return;
+      const act = parseFloat(actVal);
+      if(act === 0) return;
+      const name = tr.querySelector('.name')?.value || tr.children[0].textContent;
+      const unit = tr.querySelector('.unit')?.value || tr.children[2].textContent || '';
+      const fco2Val = tr.querySelector('.fco2')?.value || '';
+      const emis = act * ((parseFloat(fco2Val)||0)*gwpC);
+      wsData.push([name, act, unit, fco2Val, emis.toFixed(2)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), '範疇2');
+
+    // 輸出 Excel 檔
+    XLSX.writeFile(wb, 'GHG_' + Date.now() + '.xlsx');
+  };
+ 
+  // 另存 JSON
+  saveJson.onclick = () => {
+    const data = {
+      gwp: { CO2: gwpCO2.value, CH4: gwpCH4.value, N2O: gwpN2O.value },
+      Fix: [], Mob: [], Proc: [], Fug: [], S2: []
+    };
+    function grab(sec) {
+      document.querySelectorAll('#body' + sec + ' tr').forEach(tr => {
+        data[sec].push(Array.from(tr.querySelectorAll('input')).map(i => i.value));
+      });
+    }
+    ['Fix','Mob','Proc','Fug','S2'].forEach(grab);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'GHG_' + Date.now() + '.json';
+    a.click();
+  };
+
+  // 初始範例資料 (按鈕觸發，避免重複載入)
+  loadExampleBtn.onclick = () => {
+    if (document.querySelector('#bodyFix tr')) return;
+    addRow("Fix", {name: "柴油", act: "1000", unit: "升", fco2: "2.68", fch4: "0.005", fn2o: "0.01"});
+    addRow("Mob", {name: "汽油", act: "500", unit: "升", fco2: "2.3",  fch4: "0.003", fn2o: "0.007"});
+    addRow("Proc", {name: "焚燒廢料", act: "1", unit: "噸", fco2: "1000"});
+    addRow("Fug",  {name: "R134a冷媒", act: "10", unit: "公斤", fco2: "0", fch4: "0",  fhfc: "1", gwp: "1430"});
+    addRow("Fug",  {name: "滅火器釋放 CO₂", act: "1", unit: "公升", fco2: "1", fch4: "0", fhfc: "0", gwp: "0"});
+    addRow("S2",   {name: "購電", act: "1000", unit: "度", fco2: "0.5"});
+    loadExampleBtn.disabled = true;
+  };
+
+  // 匯入 JSON
+  importJson.onclick = () => fileJsonInput.click();
+  fileJsonInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        ['Fix','Mob','Proc','Fug','S2'].forEach(sec => {
+          document.querySelector('#body' + sec).innerHTML = '';
+        });
+        gwpCO2.value = data.gwp.CO2 || gwpCO2.value;
+        gwpCH4.value = data.gwp.CH4 || gwpCH4.value;
+        gwpN2O.value = data.gwp.N2O || gwpN2O.value;
+        if (data.Fix) data.Fix.forEach(arr => addRow('Fix', {name: arr[0], act: arr[1], unit: arr[2], fco2: arr[3], fch4: arr[4], fn2o: arr[5]}));
+        if (data.Mob) data.Mob.forEach(arr => addRow('Mob', {name: arr[0], act: arr[1], unit: arr[2], fco2: arr[3], fch4: arr[4], fn2o: arr[5]}));
+        if (data.Proc) data.Proc.forEach(arr => addRow('Proc', {name: arr[0], act: arr[1], unit: arr[2], fco2: arr[3]}));
+        if (data.Fug) data.Fug.forEach(arr => addRow('Fug', {name: arr[0], act: arr[1], unit: arr[2], fco2: arr[3], fch4: arr[4], fhfc: arr[5], gwp: arr[6]}));
+        if (data.S2) data.S2.forEach(arr => addRow('S2', {name: arr[0], act: arr[1], unit: arr[2], fco2: arr[3]}));
+      } catch (err) {
+        alert('無法解析 JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // 匯入 Excel
+  importExcel.onclick = () => fileExcelInput.click();
+  fileExcelInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const readerX = new FileReader();
+    readerX.onload = (evt) => {
+      const data = evt.target.result;
+      const wb = XLSX.read(data, {type: 'binary'});
+      ['Fix','Mob','Proc','Fug','S2'].forEach(sec => {
+        document.querySelector('#body' + sec).innerHTML = '';
+      });
+      // 固定排放源
+      if(wb.SheetNames.includes('固定排放源')) {
+        const ws = wb.Sheets['固定排放源'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+        for(let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if(!r[0]) continue;
+          addRow('Fix', {name: r[0], act: r[1], unit: r[2], fco2: r[3], fch4: r[4], fn2o: r[5]});
+        }
+      }
+      // 移動排放源
+      if(wb.SheetNames.includes('移動排放源')) {
+        const ws = wb.Sheets['移動排放源'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+        for(let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if(!r[0]) continue;
+          addRow('Mob', {name: r[0], act: r[1], unit: r[2], fco2: r[3], fch4: r[4], fn2o: r[5]});
+        }
+      }
+      // 製程排放源
+      if(wb.SheetNames.includes('製程排放源')) {
+        const ws = wb.Sheets['製程排放源'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+        for(let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if(!r[0]) continue;
+          addRow('Proc', {name: r[0], act: r[1], unit: r[2], fco2: r[3]});
+        }
+      }
+      // 逸散排放源
+      if(wb.SheetNames.includes('逸散排放源')) {
+        const ws = wb.Sheets['逸散排放源'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+        for(let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if(!r[0]) continue;
+          addRow('Fug', {name: r[0], act: r[1], unit: r[2], fco2: r[3], fch4: r[4], fhfc: r[5], gwp: r[6]});
+        }
+      }
+      // 範疇 2
+      if(wb.SheetNames.includes('範疇2')) {
+        const ws = wb.Sheets['範疇2'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+        for(let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if(!r[0]) continue;
+          addRow('S2', {name: r[0], act: r[1], unit: r[2], fco2: r[3]});
+        }
+      }
+    };
+    readerX.readAsBinaryString(file);
+  };
+  </script>
+
+
+</div>
+
+
+
+
+
+
+<div id="pdfContainer" style="display:none;">
+  <div id="pdfContent" style="width:800px; font-family: 'Noto Sans TC', sans-serif; white-space: pre-wrap;"></div>
+</div>
+<script>
+document.getElementById('pdfBtn').addEventListener('click', () => {
+  const report = document.getElementById('report');
+  if (!report || report.classList.contains('hidden')) {
+    alert('請先計算，才能匯出 PDF');
+    return;
+  }
+
+  const container = document.getElementById('pdfContent');
+  container.innerHTML = "";
+  const sections = report.cloneNode(true);
+  container.appendChild(sections);
+
+  const pdfBlock = document.getElementById('pdfContainer');
+  pdfBlock.style.display = 'block';
+
+  const opt = {
+    margin: 0.4,
+    filename: 'GHG_Report_' + new Date().toISOString().split('T')[0] + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(pdfBlock).save().then(() => {
+    pdfBlock.style.display = 'none';
+  });
+});
+</script>
+</body>
+
+
+
+
+</html>
+
